@@ -47,11 +47,11 @@ GROUP BY DATE(timestamp)
 ORDER BY max_amount DESC
 LIMIT 5;
 -- Exercici_3
-SELECT DATE(timestamp) AS day, MAX(amount) AS max_amount
+SELECT DATE(timestamp) AS day, MIN(amount) AS min_amount
 FROM transaction
 WHERE declined != 1
 GROUP BY DATE(timestamp)
-ORDER BY max_amount ASC
+ORDER BY min_amount ASC
 LIMIT 5;
 -- Exercici_4
 SELECT country, AVG(amount) AS average_sales
