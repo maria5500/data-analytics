@@ -6,19 +6,15 @@ DESCRIBE transaction;
 SELECT * FROM transactions.transaction;
 -- Exercici_2
 SELECT company_name, email, country
-FROM transactions.company	
+FROM company	
 ORDER BY company_name;
 -- Exercici_3
-SELECT DISTINCT company.country
+SELECT DISTINCT country
 FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-WHERE declined != 1
 ORDER BY country;
 -- Exercici_4
-SELECT COUNT(DISTINCT company.country) AS total_country
-FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-WHERE declined != 1;
+SELECT COUNT(DISTINCT country) AS total_country
+FROM company;
 -- Exercici_5
 SELECT id AS company_id, country, company_name
 FROM company
