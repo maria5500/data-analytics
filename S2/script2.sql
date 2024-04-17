@@ -1,75 +1,164 @@
 -- Nivell_1
 -- Ecercici_1
-SELECT company_name, country, t.*
-FROM transaction t
-JOIN company c ON t.company_id = c.id
-WHERE c.country = 'Germany';
--- Exercici 2
-SELECT company.company_name, SUM(transaction.amount) AS total_amount
-FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-GROUP BY company.company_name
-HAVING SUM(transaction.amount) > (SELECT AVG(amount) 
-FROM transaction 
-WHERE declined != 1)
+SELECT *
+FROM transaction
+WHERE company_id IN (SELECT id FROM company WHERE country = 'Germany');
+-- Exercici_2
+SELECT c.*, 
+       (SELECT SUM(amount) 
+        FROM transaction t
+        WHERE t.company_id = c.id 
+          AND t.declined != 1) AS total_amount
+FROM company c
+WHERE c.id IN (
+    SELECT company_id
+    FROM transaction
+    WHERE declined != 1
+    GROUP BY company_id
+    HAVING SUM(amount) > (
+        SELECT AVG(amount)
+        FROM transaction
+    )
+)
 ORDER BY total_amount DESC;
 -- Exercici_3
-SELECT DISTINCT company.company_name, t.*
-FROM company
-LEFT JOIN transaction t ON company.id = t.company_id
-WHERE company.company_name LIKE 'C%';
+SELECT 
+    t.*,
+    (
+        SELECT company_name
+        FROM company
+        WHERE id = t.company_id
+    ) AS company_name
+FROM 
+    transaction t
+WHERE 
+    t.company_id IN (
+        SELECT id
+        FROM company
+        WHERE company_name LIKE 'C%'
+    );
 -- Exercici_4
+SELECT *
+FROM company
+WHERE id NOT IN (
+    SELECT DISTINCT company_id
+    FROM transaction
+);
+--
 SELECT *
 FROM company c
 WHERE NOT EXISTS (
     SELECT 1
     FROM transaction t
     WHERE t.company_id = c.id);
---
-SELECT company.*
-FROM company
-LEFT JOIN transaction ON company.id = transaction.company_id
-WHERE transaction.company_id IS NULL;
---
-SELECT DISTINCT c.*, declined
-FROM company c
-INNER JOIN transaction t ON c.id = t.company_id
-WHERE t.declined = 1;
 -- Nivell_2
 -- Exercici_1
-SELECT company_name, country
+SELECT company_name, country, id
 FROM company c
 WHERE company_name= 'Non Institute';
 --
-SELECT company_name, country, t.*
-FROM company c
-INNER JOIN transaction t ON c.id = t.company_id
-WHERE country= 'United Kingdom' AND company_name != 'Non Institute'
+SELECT 
+    t.*,
+    (
+        SELECT company_name
+        FROM company
+        WHERE id = t.company_id
+    ) AS company_name,
+    (
+        SELECT country
+        FROM company
+        WHERE id = t.company_id
+    ) AS country
+FROM 
+    transaction t
+WHERE 
+    t.company_id IN (
+        SELECT id
+        FROM company
+        WHERE country = 'United Kingdom' AND id != 'b-2618'
+    )
 ORDER BY company_name;
 -- Exercici_2
-SELECT c.company_name, t.*
-FROM company c
-INNER JOIN (
-    SELECT company_id, MAX(amount) AS max_amount
-    FROM transaction t
-    WHERE declined != 1
-    GROUP BY company_id) t ON c.id = t.company_id
-ORDER BY t.max_amount DESC
-LIMIT 1;
+SELECT 
+    company_name,
+    (
+        SELECT 
+            MAX(amount)
+        FROM 
+            transaction
+        WHERE 
+            declined != 1
+    ) AS amount
+FROM 
+    company
+WHERE 
+    id = (
+        SELECT 
+            company_id
+        FROM 
+            transaction
+        WHERE 
+            amount = (
+                SELECT 
+                    MAX(amount)
+                FROM 
+                    transaction
+            )
+    );
 -- Nivell_3
 -- Exercici_1
-SELECT company.country, AVG(transaction.amount) AS average_sales
-FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-WHERE 
-	(SELECT AVG(amount) FROM transaction WHERE declined != 1) <
-    (SELECT AVG(amount) FROM transaction t2 WHERE t2.company_id = company.id AND t2.declined != 1)
-GROUP BY company.country
-ORDER BY average_sales DESC;
+SELECT
+    c.country,
+    (
+        SELECT AVG(t.amount)
+        FROM transaction t
+        WHERE t.company_id IN (
+            SELECT id
+            FROM company
+            WHERE country = c.country
+        ) AND t.declined != 1
+    ) AS average_transactions
+FROM
+    company c
+GROUP BY
+    c.country
+HAVING
+    (
+        SELECT AVG(t.amount)
+        FROM transaction t
+        WHERE t.company_id IN (
+            SELECT id
+            FROM company
+            WHERE country = c.country
+        ) AND t.declined != 1
+    ) > (
+        SELECT AVG(amount)
+        FROM transaction
+        WHERE declined != 1
+    );
 -- Exercici_2
-SELECT company.company_name, COUNT(transaction.id) AS total_transactions,
-    IF(COUNT(transaction.id) > 4, 'More than 4 transactions', 'Less than 4 transactions') AS transaction_count_status
-FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-GROUP BY company.company_name
-ORDER BY total_transactions DESC;
+SELECT
+    c.company_name,
+    (
+        SELECT 
+            CASE 
+				WHEN COUNT(*) > 4 THEN 'More than 4 transactions' 
+                ELSE 'Less than 4 transactions'
+            END
+        FROM 
+            transaction t 
+        WHERE 
+            t.company_id = c.id
+    ) AS transaction_count_status,
+    (
+        SELECT 
+            COUNT(*)
+        FROM 
+            transaction t 
+        WHERE 
+            t.company_id = c.id
+    ) AS total_transactions
+FROM 
+    company c
+ORDER BY
+    total_transactions DESC;
