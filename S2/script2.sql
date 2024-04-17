@@ -1,26 +1,18 @@
 -- Nivell_1
 -- Ecercici_1
 SELECT *
-FROM transaction
-WHERE company_id IN (SELECT id FROM company WHERE country = 'Germany');
+FROM transaction 
+WHERE company_id IN (SELECT  id 
+	FROM company 
+	WHERE country ='Germany');
 -- Exercici_2
-SELECT c.*, 
-       (SELECT SUM(amount) 
-        FROM transaction t
-        WHERE t.company_id = c.id 
-          AND t.declined != 1) AS total_amount
-FROM company c
-WHERE c.id IN (
-    SELECT company_id
-    FROM transaction
-    WHERE declined != 1
-    GROUP BY company_id
-    HAVING SUM(amount) > (
-        SELECT AVG(amount)
-        FROM transaction
-    )
-)
-ORDER BY total_amount DESC;
+SELECT *
+FROM company
+WHERE id IN (SELECT company_id
+	FROM transaction
+    WHERE amount > (SELECT avg(amount)
+    FROM transaction))
+ORDER BY company_name;
 -- Exercici_3
 SELECT 
     t.*,
@@ -53,31 +45,15 @@ WHERE NOT EXISTS (
     WHERE t.company_id = c.id);
 -- Nivell_2
 -- Exercici_1
-SELECT company_name, country, id
-FROM company c
-WHERE company_name= 'Non Institute';
---
-SELECT 
-    t.*,
-    (
-        SELECT company_name
-        FROM company
-        WHERE id = t.company_id
-    ) AS company_name,
-    (
-        SELECT country
-        FROM company
-        WHERE id = t.company_id
-    ) AS country
-FROM 
-    transaction t
-WHERE 
-    t.company_id IN (
-        SELECT id
-        FROM company
-        WHERE country = 'United Kingdom' AND id != 'b-2618'
-    )
-ORDER BY company_name;
+SELECT *
+FROM transaction
+WHERE company_id IN ( 
+	SELECT id
+    FROM company 
+    WHERE country = (
+		SELECT country
+		FROM company
+        WHERE company_name = 'Non Institute'));
 -- Exercici_2
 SELECT 
     company_name,
@@ -86,8 +62,6 @@ SELECT
             MAX(amount)
         FROM 
             transaction
-        WHERE 
-            declined != 1
     ) AS amount
 FROM 
     company
@@ -107,35 +81,18 @@ WHERE
     );
 -- Nivell_3
 -- Exercici_1
-SELECT
-    c.country,
-    (
-        SELECT AVG(t.amount)
-        FROM transaction t
-        WHERE t.company_id IN (
-            SELECT id
-            FROM company
-            WHERE country = c.country
-        ) AND t.declined != 1
-    ) AS average_transactions
-FROM
-    company c
-GROUP BY
-    c.country
-HAVING
-    (
-        SELECT AVG(t.amount)
-        FROM transaction t
-        WHERE t.company_id IN (
-            SELECT id
-            FROM company
-            WHERE country = c.country
-        ) AND t.declined != 1
-    ) > (
-        SELECT AVG(amount)
-        FROM transaction
-        WHERE declined != 1
-    );
+SELECT country, AVG(amount) AS average
+FROM (
+    SELECT company.country, transaction.amount
+    FROM transaction, company
+    WHERE transaction.company_id = company.id AND transaction.declined != 1
+) AS country_transactions
+GROUP BY country
+HAVING AVG(amount) > (
+    SELECT AVG(amount) AS general_average
+    FROM transaction
+    WHERE declined != 1
+);
 -- Exercici_2
 SELECT
     c.company_name,
