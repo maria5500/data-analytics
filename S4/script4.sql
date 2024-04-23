@@ -1,10 +1,6 @@
 -- Nivell_1
--- Exercici_1
-CREATE DATABASE bdtransactions;
---
-USE bdtransactions;
 CREATE TABLE companies (
-	company_id VARCHAR(15) PRIMARY KEY,
+	company_id VARCHAR(15) PRIMARY KEY NOT NULL,
     company_name VARCHAR(255),
 	phone VARCHAR(15),
 	email VARCHAR(100),
@@ -12,7 +8,7 @@ CREATE TABLE companies (
 	website VARCHAR(255)
 );
 CREATE TABLE users (
-	id INT PRIMARY KEY,
+	id INT PRIMARY KEY NOT NULL,
     name VARCHAR(255),
     surname VARCHAR(255),
     phone VARCHAR(20),
@@ -24,7 +20,7 @@ CREATE TABLE users (
     address VARCHAR(255)
 );
 CREATE TABLE credit_cards (
-	id VARCHAR(15) PRIMARY KEY,
+	id VARCHAR(15) PRIMARY KEY NOT NULL,
     user_id INT,
     iban VARCHAR(100),
     pan VARCHAR(100),
@@ -32,11 +28,10 @@ CREATE TABLE credit_cards (
     cvv VARCHAR(15),
     track1 VARCHAR(255),
     track2 VARCHAR(255),
-    expiring_date VARCHAR(25),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    expiring_date VARCHAR(25)
 );
 CREATE TABLE products (
-	id INT auto_increment PRIMARY KEY,
+	id INT auto_increment PRIMARY KEY NOT NULL,
     product_name VARCHAR(100),
 	price DECIMAL(10,2),
     colour VARCHAR(50),
@@ -44,7 +39,7 @@ CREATE TABLE products (
     warehouse_id VARCHAR(10)
 );
 CREATE TABLE transactions (
-	id VARCHAR(255) PRIMARY KEY,
+	id VARCHAR(255) PRIMARY KEY NOT NULL,
     card_id VARCHAR(15),
     business_id VARCHAR(15),
     timestamp TIMESTAMP,
@@ -92,43 +87,17 @@ SELECT * FROM bdtransactions.transactions;
 SELECT * FROM bdtransactions.transactions_products;
 -- 
 COMMIT;
+-- Exercici_1
 -- Mostrem tots els usuaris amb més de 30 transaccions
-SELECT DISTINCT t.*, counts.user_id AS user_id, counts.num_transactions AS total_transactions  
-FROM transactions t  
-INNER JOIN (
-    SELECT user_id, COUNT(*) AS num_transactions
-    FROM transactions
-    GROUP BY user_id
-    HAVING COUNT(*) > 30
-) AS counts ON t.user_id = counts.user_id
-INNER JOIN users u ON t.user_id = u.id;
--- Consulta amb JOIN a la taula transactions_products
-SELECT t.*, counts.user_id AS user_id, counts.total_transactions
-FROM transactions t
-INNER JOIN (
-    SELECT user_id, COUNT(*) AS total_transactions
-    FROM transactions
-    GROUP BY user_id
-    HAVING COUNT(*) > 30
-) AS counts ON t.user_id = counts.user_id
-INNER JOIN users u ON t.user_id = u.id
-INNER JOIN transactions_products tp ON t.id = tp.transaction_id;
--- Identifiquem l'id dels usuaris amb més de 30 transaccions
-SELECT DISTINCT user_id
-FROM (
-    SELECT DISTINCT t.*, counts.num_transactions AS total_transactions  
-    FROM transactions t  
-    INNER JOIN (
-        SELECT user_id, COUNT(*) AS num_transactions
-        FROM transactions
-        GROUP BY user_id
-        HAVING COUNT(*) > 30
-    ) AS counts ON t.user_id = counts.user_id
-    INNER JOIN users u ON t.user_id = u.id
-) AS distinct_users;
+SELECT u.id, u.name AS user_name, COUNT(*) AS total_transactions 
+FROM users u 
+JOIN transactions t ON t.user_id = u.id 
+GROUP BY u.id, u.name 
+HAVING total_transactions > 30 
+ORDER BY total_transactions DESC;
 -- Exercici_2
 -- Mostrem la mitjana d'amount per IBAN de les targetes de crèdit a la companyia Donec Ltd
-SELECT cc.iban, AVG(t.amount) AS average_amount
+SELECT cc.iban, ROUND(AVG(t.amount), 2) AS average_amount
 FROM transactions t  
 JOIN credit_cards cc ON t.card_id = cc.id  
 WHERE t.business_id IN (SELECT companies.company_id FROM companies WHERE company_name = 'Donec Ltd') 
