@@ -9,7 +9,6 @@ SHOW CREATE TABLE company;
 CREATE TABLE IF NOT EXISTS credit_card (
     id VARCHAR(25) NOT NULL,
     iban VARCHAR(150),
-    pan VARCHAR(25),
     pin VARCHAR(25),
     cvv VARCHAR(25),
     expiring_date VARCHAR(25),
@@ -19,6 +18,9 @@ SHOW COLUMNS FROM credit_card;
 --
 SELECT *
 FROM credit_card;
+-- Afegim la columna "pan" en la posició correcta
+ALTER TABLE credit_card
+ADD COLUMN pan VARCHAR(25) AFTER iban;
 -- 
 ALTER TABLE transaction
 ADD CONSTRAINT fk_credit_card_id
@@ -73,10 +75,16 @@ WHERE id='02C6201E-D90A-1859-B4EE-88D2986D3B02';
 SELECT c.company_name, c.phone, c.country, AVG(t.amount) AS average_sale  
 FROM company c  
 INNER JOIN transaction t ON c.id = t.company_id  
-WHERE t.declined != 1
 GROUP BY c.company_name, c.phone, c.country  
 ORDER BY average_sale DESC;
---
+-- Creem la vista vistamarketing
+CREATE VIEW vistamarketing AS
+SELECT c.company_name, c.phone, c.country, AVG(t.amount) AS average_sale
+FROM company c
+INNER JOIN transaction t ON c.id = t.company_id
+GROUP BY c.company_name, c.phone, c.country
+ORDER BY average_sale DESC;
+-- Aquesta es la consulta per veure la vista de les dades
 SELECT * FROM transactions.vistamarketing;
 -- Exercici_3
 SELECT * FROM transactions.vistamarketing
@@ -110,7 +118,7 @@ ALTER TABLE credit_card
 MODIFY COLUMN iban VARCHAR(50);
 --
 ALTER TABLE credit_card 
-MODIFY COLUMN pin VARCHAR(25);
+MODIFY COLUMN pin VARCHAR(4);
 --
 ALTER TABLE credit_card 
 MODIFY COLUMN cvv INT;
@@ -135,5 +143,13 @@ JOIN user u ON t.user_id = u.id
 JOIN credit_card cc ON t.credit_card_id = cc.id
 JOIN company c ON t.company_id = c.id
 ORDER BY id_transaction DESC;
--- 
+-- Creem la vista InformeTecnico
+CREATE VIEW InformeTecnico AS
+SELECT t.id AS id_transaction, u.name AS user_name, u.surname AS user_surname, cc.iban, c.company_name
+FROM transaction t
+JOIN user u ON t.user_id = u.id
+JOIN credit_card cc ON t.credit_card_id = cc.id
+JOIN company c ON t.company_id = c.id
+ORDER BY id_transaction DESC;
+-- Aquesta es la consulta per veure la vista de les dades
 SELECT * FROM transactions.InformeTecnico;
