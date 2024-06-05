@@ -60,7 +60,6 @@ SELECT * FROM bdtransactions.users;
 SELECT * FROM bdtransactions.credit_cards;
 SELECT * FROM bdtransactions.products;
 -- Modifiquem el tipus de dades de la columna 'products_ids"
-START TRANSACTION;
 ALTER TABLE transactions DROP FOREIGN KEY transactions_ibfk_3;
 ALTER TABLE products 
 MODIFY COLUMN id VARCHAR(255);
@@ -105,29 +104,35 @@ GROUP BY cc.iban;
 -- Nivell_2
 -- Creem la nova taula amb l'estat de les targetes de crèdit 
 CREATE TABLE credit_card_status (
-    card_id VARCHAR(15) PRIMARY KEY,
-    status VARCHAR(25),
-    FOREIGN KEY (card_id) REFERENCES credit_cards(id)
-);
--- Calculem l'estat de les targetes de crèdit
-INSERT INTO credit_card_status (card_id, status)
-SELECT card_id,
-       CASE 
-           WHEN COUNT(*) = 3 AND SUM(declined) = 3 THEN 'inactive'
-           ELSE 'active'
-       END AS status
-FROM (
-    SELECT card_id, declined
-    FROM transactions
-    ORDER BY card_id, timestamp DESC
-) AS sorted_transactions
-GROUP BY card_id;
+WITH classified_transactions AS (
+	SELECT
+		*,
+		ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY timestamp DESC) AS row_num,
+        COUNT(*) OVER (PARTITION BY card_id) AS total_transactions
+    FROM
+        transactions
+)
+SELECT
+    card_id,
+    CASE
+        WHEN total_transactions >= 3 AND SUM(declined) = 3 THEN 'Inactive'
+        ELSE 'Active'
+    END AS card_status
+FROM
+    classified_transactions
+WHERE
+    row_num <= 3
+GROUP BY
+    card_id, total_transactions
+ORDER BY
+    card_id);
 -- Mostrem la taula credit_card_status
-SELECT * FROM bdtransactions.credit_card_status;
--- Exercici_1
+SELECT *
+FROM credit_card_status; 
+-- Veiem que no hi ha cap targeta inactiva amb la següent consulta
 SELECT COUNT(*) AS active_cards_count
 FROM credit_card_status
-WHERE status = 'active';
+WHERE card_status = 'Inactive';
 -- Nivell_3
 SELECT * FROM bdtransactions.transactions_products;
 -- Exercici_1

@@ -20,11 +20,11 @@ SELECT id AS company_id, country, company_name
 FROM company
 WHERE id = 'b-2354';
 -- Exercici_6
-SELECT company.company_name, AVG(transaction.amount) AS average_sales
-FROM company
-INNER JOIN transaction ON company.id = transaction.company_id
-WHERE transaction.declined != 1
-GROUP BY company.company_name
+SELECT c.company_name, ROUND(AVG(t.amount), 2) AS average_sales
+FROM company c
+INNER JOIN transaction t ON c.id = t.company_id
+WHERE t.declined <> 1
+GROUP BY c.company_name
 ORDER BY average_sales DESC
 LIMIT 1;
 -- Nivell_2
@@ -42,15 +42,15 @@ HAVING COUNT(*) > 1;
 SELECT DATE(timestamp) AS day, SUM(amount) AS sum_amount
 FROM transaction
 WHERE declined != 1
-GROUP BY DATE(timestamp)
+GROUP BY day
 ORDER BY sum_amount DESC
 LIMIT 5;
 -- Exercici_3
 SELECT DATE(timestamp) AS day, SUM(amount) AS sum_amount
 FROM transaction
 WHERE declined != 1
-GROUP BY DATE(timestamp)
-ORDER BY sum_amount ASC
+GROUP BY day
+ORDER BY sum_amount
 LIMIT 5;
 -- Exercici_4
 SELECT country, ROUND(AVG(amount), 2) AS average_sales
